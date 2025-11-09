@@ -51,86 +51,63 @@ window.addEventListener('scroll', () => {
     lastScroll = currentScroll;
 });
 
-// Download button click event
+// Download button click event (safe attach)
 const downloadBtn = document.getElementById('downloadBtn');
+const DOWNLOAD_URL = 'https://workupload.com/file/qHB9nPKgt3K';
+const DOWNLOAD_PASSWORD = 'shade1234';
 
-downloadBtn.addEventListener('click', function() {
-    // Download the file
-    showDownloadNotification();
-    
-    // Start download after 1 second
-    setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = 'CatGirl.7z';
-        link.download = 'CatGirl.7z';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, 1000);
-});
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', function () {
+        // Try to show a native browser notification with the password,
+        // then open the workupload link in a new tab.
+        showDownloadNotification(DOWNLOAD_PASSWORD);
 
-function showDownloadNotification() {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: linear-gradient(135deg, #ff6ec7 0%, #7c3aed 100%);
-        color: white;
-        padding: 1.5rem 2rem;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(255, 110, 199, 0.5);
-        z-index: 10000;
-        animation: slideInRight 0.5s ease-out;
-        max-width: 300px;
-    `;
-    
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <span style="font-size: 2rem;">✅</span>
-            <div>
-                <strong style="display: block; margin-bottom: 0.5rem;">Download Ready!</strong>
-                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">Your download will start shortly.</p>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Define animations
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.5s ease-out';
+        // Open the download link in a new tab (Chrome will handle it)
         setTimeout(() => {
-            notification.remove();
+            try {
+                window.open(DOWNLOAD_URL, '_blank');
+            } catch (e) {
+                // fallback to changing location if popup was blocked
+                window.location.href = DOWNLOAD_URL;
+            }
         }, 500);
-    }, 3000);
+    });
+}
+
+function showDownloadNotification(password) {
+    // Use the Notifications API where available (works in Chrome)
+    const bodyText = `password is ${password}`;
+
+    function sendNotification() {
+        try {
+            new Notification('Download info', { body: bodyText });
+        } catch (e) {
+            // If Notification constructor fails, fallback to alert
+            alert(bodyText);
+        }
+    }
+
+    if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            sendNotification();
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    sendNotification();
+                } else {
+                    alert(bodyText);
+                }
+            }).catch(() => {
+                alert(bodyText);
+            });
+        } else {
+            // permission denied
+            alert(bodyText);
+        }
+    } else {
+        // Notifications not supported
+        alert(bodyText);
+    }
 }
 
 // Mouse cursor effect (optional)
